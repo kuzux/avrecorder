@@ -14,6 +14,8 @@ class VideoEncoder {
     size_t width;
     size_t height;
 
+    bool started = false;
+
     AVOutputFormat* av_fmt = nullptr;
     AVFormatContext* format_ctx = nullptr;
     AVCodec* codec = nullptr;
@@ -108,6 +110,7 @@ public:
             throw std::system_error(rc, std::generic_category(), "av_frame_get_buffer");
 
         frame_id = 0;
+        started = true;
     }
 
     void dump() const {
@@ -115,7 +118,6 @@ public:
     }
 
     void writeFrame(const uint8_t* nv12) {
-        printf("frame id %d\n", frame_id);
         frame->pts = (90000/15) * frame_id++; // no idea why i have to scale it up like that
         memcpy(frame->data[0], nv12, width*height);
         memcpy(frame->data[1], nv12+width*height, width*height/2);
@@ -158,5 +160,11 @@ public:
         rc = avio_close(format_ctx->pb);
         if(rc < 0)
             throw std::system_error(rc, std::generic_category(), "avio_close");
+
+        started = false;
+    }
+
+    bool running() const {
+        return started;
     }
 };
