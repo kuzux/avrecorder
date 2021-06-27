@@ -36,7 +36,7 @@ public:
         v4l2_capability capability = {0};
         if(ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0)
             throw std::system_error(errno, std::generic_category(), "VIDIOC_QUERYCAP");
-        if(capability.capabilities & V4L2_CAP_VIDEO_CAPTURE == 0)
+        if((capability.capabilities & V4L2_CAP_VIDEO_CAPTURE) == 0)
             throw std::invalid_argument("Device does not have video capture capability");
 
         // TODO: Actually negotiate with the webcam about format and resolution
