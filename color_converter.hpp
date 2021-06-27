@@ -57,6 +57,15 @@ class ColorConverter {
                 *curr++ = in[2*(i*width+j)];
             }
         }
+
+        for(size_t i=0; i<height; i+=2) {
+            for(size_t j=0; j<width/2; j++) {
+                uint8_t u = in[2*i*width+4*j+1];
+                uint8_t v = in[2*i*width+4*j+3];
+                *curr++ = u;
+                *curr++ = v;
+            }
+        }
     }
 
 public:

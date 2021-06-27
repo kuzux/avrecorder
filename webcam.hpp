@@ -52,6 +52,14 @@ public:
         if(image_format.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
             throw std::runtime_error("Could not set format to yuyv");
 
+        /* Doesn't seem to do anythiong
+        v4l2_streamparm parm;
+        parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        parm.parm.capture.timeperframe.numerator = 1;
+        parm.parm.capture.timeperframe.denominator = 30;
+        if(ioctl(fd, VIDIOC_S_PARM, &parm) < 0)
+            throw std::system_error(errno, std::generic_category(), "VIDIOC_S_PARM"); */
+
         // https://www.kernel.org/doc/html/v4.9/media/uapi/v4l/mmap.html#mmap
         v4l2_requestbuffers buffer_req = {0};
         buffer_req.count = 1;
@@ -66,8 +74,6 @@ public:
         buffer_info.index = 0;
         if(ioctl(fd, VIDIOC_QUERYBUF, &buffer_info) < 0)
             throw std::system_error(errno, std::generic_category(), "VIDIOC_QUERYBUF");
-        printf("first buflen %d\n", buffer_info.length);
-
 
         buf = (uint8_t*)mmap(NULL, buffer_info.length, 
             PROT_READ | PROT_WRITE, MAP_SHARED,

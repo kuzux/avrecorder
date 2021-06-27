@@ -66,10 +66,10 @@ int main(int argc, char** argv) {
     if(rc < 0) 
         throw std::system_error(rc, std::generic_category(), "avcodec_parameters_to_context");
 
-    codec_ctx->time_base = (AVRational){ 1, 30 };
+    codec_ctx->time_base = (AVRational){ 1, 1 };
     codec_ctx->max_b_frames = 2;
-    codec_ctx->gop_size = 30;
-    // codec_ctx->framerate = (AVRational){ 1, 30 };
+    codec_ctx->gop_size = 20;
+    codec_ctx->framerate = (AVRational){ 20, 1 };
     av_opt_set(codec_ctx, "preset", "ultrafast", 0);
     avcodec_parameters_from_context(stream->codecpar, codec_ctx);
 
@@ -104,6 +104,7 @@ int main(int argc, char** argv) {
     auto nv12Conv = ColorConverter(640, 480, Colorspace::NV12);
 
     sf::RenderWindow window(sf::VideoMode(640, 480), "Webcam viewer");
+    window.setFramerateLimit(20);
     sf::Texture tex;
     tex.create(640, 480);
     sf::Sprite cam_image(tex);
@@ -117,8 +118,9 @@ int main(int argc, char** argv) {
         auto nv12 = nv12Conv.convertYUYV(yuyv);
 
         tex.update(rgba);
-        frame->pts = 3000 * frameId++; // no idea why i have to scale it up like that
+        frame->pts = 5200 * frameId++; // no idea why i have to scale it up like that
         memcpy(frame->data[0], nv12, 640*480);
+        memcpy(frame->data[1], nv12+640*480, 640*480/2);
         rc = avcodec_send_frame(codec_ctx, frame);
         if(rc < 0) 
             throw std::system_error(rc, std::generic_category(), "avcodec_send_frame");
