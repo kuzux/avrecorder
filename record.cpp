@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     codec_ctx->time_base = (AVRational){ 1, 30 };
     codec_ctx->max_b_frames = 2;
     codec_ctx->gop_size = 30;
-    codec_ctx->framerate = (AVRational){ 30, 1 };
+    // codec_ctx->framerate = (AVRational){ 1, 30 };
     av_opt_set(codec_ctx, "preset", "ultrafast", 0);
     avcodec_parameters_from_context(stream->codecpar, codec_ctx);
 
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
         auto nv12 = nv12Conv.convertYUYV(yuyv);
 
         tex.update(rgba);
-        frame->pts = frameId++;
+        frame->pts = 3000 * frameId++; // no idea why i have to scale it up like that
         memcpy(frame->data[0], nv12, 640*480);
         rc = avcodec_send_frame(codec_ctx, frame);
         if(rc < 0) 
@@ -145,6 +145,22 @@ int main(int argc, char** argv) {
         window.clear();
         window.draw(cam_image);
         window.display();
+    }
+
+    AVPacket pkt;
+    av_init_packet(&pkt);
+    pkt.data = NULL;
+    pkt.size = 0;
+
+    for (;;) {
+        avcodec_send_frame(codec_ctx, NULL);
+        if (avcodec_receive_packet(codec_ctx, &pkt) == 0) {
+            av_interleaved_write_frame(format_ctx, &pkt);
+            av_packet_unref(&pkt);
+        }
+        else {
+            break;
+        }
     }
 
     rc = av_write_trailer(format_ctx);
