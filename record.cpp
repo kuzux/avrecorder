@@ -17,18 +17,23 @@ int main(int argc, char** argv) {
     VideoEncoder::setup();
 
     char* dev_name = argv[1];
-    auto cam = Webcam(dev_name);
+    auto cam = Webcam(dev_name, 640, 480, 30);
     cam.start();
 
-    auto rgbaConv = ColorConverter(640, 480, Colorspace::RGBA);
-    auto nv12Conv = ColorConverter(640, 480, Colorspace::NV12);
+    auto [width, height] = cam.resolution();
+    auto fps = cam.effectiveFps();
+    printf("res %dx%d\n", width, height);
+    printf("fps %d\n", fps);
 
-    auto encoder = VideoEncoder("out.mp4", 640, 480);
+    auto rgbaConv = ColorConverter(width, height, Colorspace::RGBA);
+    auto nv12Conv = ColorConverter(width, height, Colorspace::NV12);
 
-    sf::RenderWindow window(sf::VideoMode(640, 480), "Webcam viewer");
-    window.setFramerateLimit(15);
+    auto encoder = VideoEncoder("out.mp4", width, height, fps);
+
+    sf::RenderWindow window(sf::VideoMode(width, height), "Webcam viewer");
+    window.setFramerateLimit(fps);
     sf::Texture tex;
-    tex.create(640, 480);
+    tex.create(width, height);
     sf::Sprite cam_image(tex);
 
     sf::Font font;

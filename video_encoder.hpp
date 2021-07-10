@@ -13,6 +13,7 @@ class VideoEncoder {
 
     size_t width;
     size_t height;
+    size_t fps;
 
     bool started = false;
 
@@ -32,10 +33,11 @@ public:
         avcodec_register_all();
     }
 
-    VideoEncoder(const char* filename, size_t width, size_t height) :
+    VideoEncoder(const char* filename, size_t width, size_t height, size_t fps) :
         filename(filename),
         width(width),
-        height(height) {
+        height(height),
+        fps(fps) {
 
         // avcodec code taken from https://stackoverflow.com/a/59559256/1936271
 
@@ -76,10 +78,10 @@ public:
         if(rc < 0) 
             throw std::system_error(rc, std::generic_category(), "avcodec_parameters_to_context");
 
-        codec_ctx->time_base = (AVRational){ 1, 15 };
+        codec_ctx->time_base = (AVRational){ 1, fps };
         codec_ctx->max_b_frames = 2;
-        codec_ctx->gop_size = 15;
-        codec_ctx->framerate = (AVRational){ 15, 1 };
+        codec_ctx->gop_size = fps;
+        codec_ctx->framerate = (AVRational){ fps, 1 };
         av_opt_set(codec_ctx, "preset", "ultrafast", 0);
         avcodec_parameters_from_context(stream->codecpar, codec_ctx);
     }
@@ -118,7 +120,7 @@ public:
     }
 
     void writeFrame(const uint8_t* nv12) {
-        frame->pts = (90000/15) * frame_id++; // no idea why i have to scale it up like that
+        frame->pts = (90000/fps) * frame_id++; // no idea why i have to scale it up like that
         memcpy(frame->data[0], nv12, width*height);
         memcpy(frame->data[1], nv12+width*height, width*height/2);
         int rc = avcodec_send_frame(codec_ctx, frame);

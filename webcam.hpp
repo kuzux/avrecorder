@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 
+#include <tuple>
 #include <system_error>
 #include <stdexcept>
 
@@ -23,9 +24,13 @@ class Webcam {
     v4l2_buffer buffer_info = {0};
     uint8_t* buf = nullptr;
     size_t buflen;
+
+    size_t width = 0;
+    size_t height = 0;
+    size_t fps = 0;
 public:
     // this function allocates memory
-    Webcam(const char* devPath) {
+    Webcam(const char* devPath, size_t width, size_t height, size_t fps) {
         // here's a simple example for webcam capture https://gist.github.com/mike168m/6dd4eb42b2ec906e064d
         // and the reference documentation for it https://www.kernel.org/doc/html/v4.9/media/uapi/v4l/v4l2.html
 
@@ -43,22 +48,28 @@ public:
         // And refresh rate
         v4l2_format image_format = {0};
         image_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        image_format.fmt.pix.width = 640;
-        image_format.fmt.pix.height = 480;
+        image_format.fmt.pix.width = width;
+        image_format.fmt.pix.height = height;
         image_format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
         image_format.fmt.pix.field = V4L2_FIELD_NONE;
         if(ioctl(fd, VIDIOC_S_FMT, &image_format) < 0)
             throw std::system_error(errno, std::generic_category(), "VIDIOC_S_FMT");
         if(image_format.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
             throw std::runtime_error("Could not set format to yuyv");
+        if(image_format.fmt.pix.field != V4L2_FIELD_NONE)
+            throw std::runtime_error("Could not set deinterlaced format");
+        this->width = image_format.fmt.pix.width;
+        this->height = image_format.fmt.pix.height;
 
-        /* Doesn't seem to do anythiong
+        // try setting fps to 30
         v4l2_streamparm parm;
         parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         parm.parm.capture.timeperframe.numerator = 1;
-        parm.parm.capture.timeperframe.denominator = 30;
+        parm.parm.capture.timeperframe.denominator = fps;
         if(ioctl(fd, VIDIOC_S_PARM, &parm) < 0)
-            throw std::system_error(errno, std::generic_category(), "VIDIOC_S_PARM"); */
+            throw std::system_error(errno, std::generic_category(), "VIDIOC_S_PARM");
+        // whatever fps we managed to set
+        this->fps = parm.parm.capture.timeperframe.denominator;
 
         // https://www.kernel.org/doc/html/v4.9/media/uapi/v4l/mmap.html#mmap
         v4l2_requestbuffers buffer_req = {0};
@@ -105,6 +116,15 @@ public:
             throw std::system_error(errno, std::generic_category(), "VIDIOC_DQBUF");
 
         return buf;
+    }
+
+    std::tuple<size_t, size_t> resolution() {
+        return std::make_tuple(width, height);
+    }
+
+    size_t effectiveFps() {
+        // deinterlacing reduces our frame rate to half
+        return fps/2;
     }
 
     ~Webcam() {
