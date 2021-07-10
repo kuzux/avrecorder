@@ -15,6 +15,7 @@ class ColorConverter {
         float U = (int16_t)u - 128;
         float V = (int16_t)v - 128;
 
+        // todo: use an integer approximation instead of float operations
         float R = 1.164 * Y             + 1.596 * V;
         float G = 1.164 * Y - 0.392 * U - 0.813 * V;
         float B = 1.164 * Y + 2.017 * U;

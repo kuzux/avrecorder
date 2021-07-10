@@ -44,12 +44,13 @@ public:
         if((capability.capabilities & V4L2_CAP_VIDEO_CAPTURE) == 0)
             throw std::invalid_argument("Device does not have video capture capability");
 
-        // TODO: Actually negotiate with the webcam about format and resolution
-        // And refresh rate
+        // TODO: calculate the x/y/fps values based on some min frame rate/min resolution thing
         v4l2_format image_format = {0};
         image_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         image_format.fmt.pix.width = width;
         image_format.fmt.pix.height = height;
+        // TODO: find what pix formats we have available, favor rgba, then yuv444,
+        // yuv422 and then yuv420 formats
         image_format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
         image_format.fmt.pix.field = V4L2_FIELD_NONE;
         if(ioctl(fd, VIDIOC_S_FMT, &image_format) < 0)
@@ -61,7 +62,6 @@ public:
         this->width = image_format.fmt.pix.width;
         this->height = image_format.fmt.pix.height;
 
-        // try setting fps to 30
         v4l2_streamparm parm;
         parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         parm.parm.capture.timeperframe.numerator = 1;
