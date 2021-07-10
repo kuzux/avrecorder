@@ -4,11 +4,30 @@
 #include "webcam.hpp"
 #include "color_converter.hpp"
 #include "video_encoder.hpp"
+#include "audio_recorder.hpp"
 
 #include <system_error>
 #include <stdexcept>
 
 int main(int argc, char** argv) {
+    /* printf("audio capture test\n");
+    AudioRecorder rec;
+    rec.start();
+    
+    for(int i = 0; i<1000; i++) {
+        uint8_t* buf = rec.getSample();
+        int avg = 0;
+        
+        for(int s=0; s<128; s++) {
+            avg += buf[s];
+        }
+
+        avg /= 128;
+        printf("avg magnitude:%d\r", avg);
+    }
+
+    return 0; */
+
     if(argc == 1) {
         printf("usage: record DEVNAME (something like /dev/video0)");
         return 1;
